@@ -9,6 +9,7 @@ const saltRounds = 10;
 
 // Require the User model in order to interact with the database
 const User = require("../models/User.model");
+const Post = require("../models/Post.model");
 
 // require (import) middleware functions
 const { isLoggedIn, isLoggedOut } = require("../middleware/route-guard.js");
