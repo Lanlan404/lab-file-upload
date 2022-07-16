@@ -13,6 +13,9 @@ const User = require("../models/User.model");
 // require (import) middleware functions
 const { isLoggedIn, isLoggedOut } = require("../middleware/route-guard.js");
 
+//require cloudinary config
+const fileUploader = require('../config/cloudinary.config');
+
 ////////////////////////////////////////////////////////////////////////
 ///////////////////////////// SIGNUP //////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
@@ -21,7 +24,7 @@ const { isLoggedIn, isLoggedOut } = require("../middleware/route-guard.js");
 router.get("/signup", isLoggedOut, (req, res) => res.render("auth/signup"));
 
 // .post() route ==> to process form data
-router.post("/signup", isLoggedOut, (req, res, next) => {
+router.post("/signup", isLoggedOut, fileUploader.single('profilePicture'), (req, res, next) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
@@ -41,6 +44,8 @@ router.post("/signup", isLoggedOut, (req, res, next) => {
     return;
   }
 
+console.log('PP=', req.file)
+
   bcryptjs
     .genSalt(saltRounds)
     .then((salt) => bcryptjs.hash(password, salt))
@@ -51,11 +56,12 @@ router.post("/signup", isLoggedOut, (req, res, next) => {
         // passwordHash => this is the key from the User model
         //     ^
         //     |            |--> this is placeholder (how we named returning value from the previous method (.hash()))
-        passwordHash: hashedPassword
+        passwordHash: hashedPassword,
+        profilePicture:req.file.path,
       });
     })
     .then((userFromDB) => {
-      // console.log("Newly created user is: ", userFromDB);
+      console.log("Newly created user is: ", userFromDB);
       res.redirect("/user-profile");
     })
     .catch((error) => {
@@ -113,8 +119,11 @@ router.post("/logout", isLoggedIn, (req, res) => {
   res.redirect("/");
 });
 
-router.get("/user-profile", isLoggedIn, (req, res) => {
-  res.render("users/user-profile");
+router.get("/user-profile", (req, res) => {
+  if(!req.session.user){
+    res.redirect("/login")
+  }
+  res.render("users/user-profile",{user:req.session.user});
 });
 
 module.exports = router;
